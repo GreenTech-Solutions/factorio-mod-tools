@@ -1,0 +1,34 @@
+name: Factorio mod check
+description: Lua 5.2 syntax, luacheck, emmylua_check against the Factorio API and the changelog.txt format of a Factorio mod
+inputs:
+  path:
+    description: Mod directory, relative to the workspace
+    default: "."
+runs:
+  using: composite
+  steps:
+    - name: Toolchain cache key
+      id: key
+      shell: bash
+      run: echo "key=factorio-lua-$RUNNER_OS-$RUNNER_ARCH-$(shasum -a 256 "$GITHUB_ACTION_PATH/lua/versions.sh" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+    - name: Cache the Lua toolchain
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.local/share/factorio-lua
+        key: ${{ steps.key.outputs.key }}
+    # fmtk, which builds the Factorio API library, needs Node.js 22.7+
+    - name: Set up Node.js
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: 24
+    - name: Set up the Lua toolchain
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/lua/setup.sh"'
+    - name: Check the mod
+      shell: bash
+      env:
+        MOD_PATH: ${{ inputs.path }}
+      run: '"$GITHUB_ACTION_PATH/lua/check.sh" "$GITHUB_WORKSPACE/$MOD_PATH"'

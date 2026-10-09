@@ -1,0 +1,60 @@
+name: Self-test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Shellcheck
+        run: shellcheck -x lua/*.sh bin/factorio-mod-check
+      - name: Check the good mod
+        uses: ./
+        with:
+          path: test/good-mod
+      - name: Check the bad mod
+        id: bad
+        continue-on-error: true
+        uses: ./
+        with:
+          path: test/bad-mod
+      - name: The bad mod must fail
+        if: steps.bad.outcome != 'failure'
+        run: |
+          echo "::error::test/bad-mod passed the check"
+          exit 1
+
+  release:
+    name: release config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # loads the shared config and every plugin in it on the good mod; stops at verifyConditions without tokens
+      - name: Load the release config
+        working-directory: test/good-mod
+        run: |
+          ../../node_modules/.bin/semantic-release --dry-run --no-ci --extends "$GITHUB_WORKSPACE/release/config.cjs" 2>&1 | tee release.log || true
+          for plugin in semantic-release-factorio @semantic-release/github @semantic-release/git \
+            @semantic-release/commit-analyzer @semantic-release/release-notes-generator; do
+            grep -q "from \"$plugin\"" release.log || { echo "::error::plugin $plugin did not load"; exit 1; }
+          done

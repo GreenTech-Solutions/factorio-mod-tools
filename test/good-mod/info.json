@@ -1,0 +1,8 @@
+{
+  "name": "good-mod",
+  "version": "1.0.0",
+  "title": "Good mod",
+  "author": "GreenTech-Solutions",
+  "factorio_version": "2.1",
+  "dependencies": ["base"]
+}

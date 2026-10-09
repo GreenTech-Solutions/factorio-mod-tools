@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Checks the Factorio mod in the current directory, or in the given one, the same way CI does.
+# Link it into PATH once: ln -s "$PWD/bin/factorio-mod-check" ~/.local/bin/
+#   factorio-mod-check [mod directory]
+#   factorio-mod-check --setup              install or update the toolchain (lua/setup.sh)
+set -euo pipefail
+
+tools="$(cd "$(dirname "$(realpath "$0")")/.." && pwd)"
+if [ "${1:-}" = "--setup" ]; then
+  exec "$tools/lua/setup.sh"
+fi
+exec "$tools/lua/check.sh" "$@"
