@@ -95,3 +95,9 @@ Mods use the `v1` tag, which moves to the latest `v1.x.y`. A change that can mak
 a new API version) goes into a new minor version with a line in the release notes; a change of the inputs or of what the
 mod has to provide gets `v2`. `.github/workflows/self-test.yml` runs the check on `test/good-mod` (must pass) and
 `test/bad-mod` (must fail) and loads the release config with all its plugins.
+
+Releases are made by release-please (`.github/workflows/release.yml`): a push to `master` with a `feat`, `fix`, `perf`,
+`refactor` or `revert` commit opens a release PR (`!` makes a new major). Merging it tags `vX.Y.Z`, and the workflow moves
+`v1` and `v1.Y` onto it; these two tags get no GitHub Release. Tags are not set by hand. A push that changes the tooling
+(`action.yml`, `lua/`, `release/`, `publish/`, `bin/`, `package.json`) without a releasable commit fails. With a `PAT_TOKEN`
+secret the release PR runs the self-test; with the default token it does not.

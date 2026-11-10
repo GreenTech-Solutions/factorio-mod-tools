@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          # a PAT, so the release PR runs the self-test; GITHUB_TOKEN when the secret is not set
+          token: ${{ secrets.PAT_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # release-please only creates the exact vX.Y.Z tag, but the action is consumed as `@v1`,
+      # so the moving major and minor tags follow every release. They never get a GitHub Release:
+      # under immutable releases that would freeze them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.release.outputs.release_created == 'true'
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+
+      - name: Move major and minor tags
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.tag_name }}
+          MAJOR: v${{ steps.release.outputs.major }}
+          MINOR: v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa "$MAJOR" -m "Update $MAJOR tag to $VERSION"
+          git tag -fa "$MINOR" -m "Update $MINOR tag to $VERSION"
+          git push origin --force "$MAJOR" "$MINOR"
+
+  # release-please skips commits whose subject is not a conventional commit, which leaves v1 on the
+  # previous commit and every mod on the previous tooling.
+  guard:
+    needs: release-please
+    if: >-
+      needs.release-please.outputs.release_created != 'true'
+      && needs.release-please.outputs.prs_created != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Fail if tooling changed without a releasable commit
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if ! git rev-parse --verify -q "${BEFORE}^{commit}" >/dev/null; then
+            echo "No comparable base commit for this push, nothing to check."
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BEFORE" HEAD -- action.yml 'lua/**' 'release/**' 'publish/**' 'bin/**' package.json pnpm-lock.yaml)"
+          if [ -z "$changed" ]; then
+            echo "No tooling changed in this push, skipping the release is safe."
+            exit 0
+          fi
+          echo "Changed since ${BEFORE}:"
+          echo "$changed"
+          echo "::error::Tooling changed but no commit in this push was releasable, so v1 stays on the old commit. Use a conventional subject: feat|fix|perf|refactor|revert (add '!' for a breaking change)."
+          exit 1
