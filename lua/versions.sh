@@ -8,6 +8,12 @@ factorio_api_version=2.1.20
 hererocks_commit=5d77b0bafc8b96f82355ca2ce5637c00d78a065c
 luacheck_version=1.2.0-1
 
+# Lua source for hererocks: tried in order (lua.org times out from GitHub runners at times), checked against
+# the sha256 of the official tarball, the same one hererocks checks
+lua_version=5.2.4
+lua_sha256=b9e2e4aad6789b3b63a056d442f7b39f0ecfca3ae0f1fc0ae4e9614401b69f4b
+lua_urls="https://www.lua.org/ftp https://ftp.openbsd.org/pub/OpenBSD/distfiles https://sources.buildroot.net/lua"
+
 emmylua_version=0.25.1
 # sha256 of emmylua_check-<platform>.tar.gz from the EmmyLuaLs/emmylua-analyzer-rust release
 emmylua_sha256_linux_x64=6ce2e19d0a82ed901c2c67a18567b340447682f843c7a0a82098e50e8d2f107e
