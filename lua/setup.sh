@@ -19,7 +19,20 @@ trap 'rm -rf "$tmp"' EXIT
 lua_home="$root/5.2"
 if [ ! -x "$lua_home/bin/lua" ]; then
   curl -sfL "https://raw.githubusercontent.com/luarocks/hererocks/$hererocks_commit/hererocks.py" -o "$tmp/hererocks.py"
-  python3 "$tmp/hererocks.py" "$lua_home" -l 5.2 -r latest --no-readline
+  # hererocks takes the tarball from --downloads when it is there; its own mirrors are lua.org and a dead one
+  downloads="$tmp/downloads"
+  mkdir -p "$downloads"
+  archive="$downloads/lua-$lua_version.tar.gz"
+  for base in $lua_urls; do
+    if curl -sfL --connect-timeout 15 --max-time 120 "$base/lua-$lua_version.tar.gz" -o "$archive" \
+      && echo "$lua_sha256  $archive" | shasum -a 256 -c - > /dev/null 2>&1; then
+      break
+    fi
+    echo "lua-$lua_version.tar.gz: $base failed" >&2
+    rm -f "$archive"
+  done
+  [ -f "$archive" ] || { echo "lua-$lua_version.tar.gz: no mirror answered" >&2; exit 1; }
+  python3 "$tmp/hererocks.py" "$lua_home" -l "$lua_version" -r latest --no-readline --downloads "$downloads"
 fi
 "$lua_home/bin/lua" -v
 
