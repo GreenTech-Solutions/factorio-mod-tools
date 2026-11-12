@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.0.1...v1.0.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* a merge commit with a BREAKING CHANGE footer no longer writes a category without a name to changelog.txt ([5c6518a](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/5c6518a402b8ca402fff9c23af514c210ca8e34f))
+* no category without a name in changelog.txt from a merge commit with BREAKING CHANGE ([cf5b72a](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/cf5b72a28612d4d97b760f746601b403802b59de))
+
 ## [1.0.1](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.0.0...v1.0.1) (2026-11-10)
 
 
