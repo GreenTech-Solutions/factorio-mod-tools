@@ -97,6 +97,8 @@ def check(text):
         elif re.match(r"^  [^ ]", line):
             if not line.endswith(":"):
                 problem(number, "category line must end with a colon")
+            elif not line.strip()[:-1].strip():
+                problem(number, "category without a name")
             category = line.strip()
             previous = "category"
         elif line.startswith("    - "):
