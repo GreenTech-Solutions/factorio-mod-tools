@@ -74,7 +74,8 @@ The toolchain (Lua 5.2, luacheck, emmylua_check, the API library) is cached by t
 The mod needs no `package.json` or `.releaserc`: the action installs semantic-release from this repository and runs it
 with `--extends release/config.cjs`. It releases from `main` or `master`, whichever exists. Commit types and the
 `changelog.txt` sections they go to are in [`release/config.cjs`](release/config.cjs): `feat` is a minor release,
-`fix`, `balance`, `compat`, `locale` and the rest are patches, and a breaking change is a major one. `FACTORIO_TOKEN` is
+`fix`, `balance`, `compat`, `locale` and the rest are patches, and a breaking change is a major one. The text of a
+`BREAKING CHANGE:` footer goes to Major Features; a commit without a type (a merge commit) gets no line. `FACTORIO_TOKEN` is
 a mod portal API key with the upload permission.
 
 ## Locally

@@ -45,8 +45,11 @@ module.exports = {
             "Version: {{version}}\nDate: {{#if date}}{{date}}{{else}}????{{/if}}\n",
           footerPartial: "",
           commitPartial: "{{#if scope}}[{{scope}}] {{/if}}{{~subject}}",
+          // A commit without a type (a merge commit with a BREAKING CHANGE footer) lands in a group without a title;
+          // the game does not parse a category without a name, so such groups are left out. Breaking notes go to
+          // Major Features.
           mainTemplate:
-            "{{> header}}\n{{#each commitGroups}}\n  {{title}}:\n{{#each commits}}\n    - {{> commit root=@root}}\n{{/each}}\n{{/each}}",
+            "{{> header}}\n{{#if noteGroups}}\n  Major Features:\n{{#each noteGroups}}\n{{#each notes}}\n    - {{text}}\n{{/each}}\n{{/each}}\n{{/if}}\n{{#each commitGroups}}\n{{#if title}}\n  {{title}}:\n{{#each commits}}\n    - {{> commit root=@root}}\n{{/each}}\n{{/if}}\n{{/each}}",
         },
         presetConfig: {
           types: types.map(([type, section]) => ({ type, section })),

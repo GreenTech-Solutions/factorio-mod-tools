@@ -2,3 +2,5 @@ Version: 1.0.0
 Date: 2026-10-09
   Features:
     - The separator line above is missing.
+  :
+    - A category without a name.
