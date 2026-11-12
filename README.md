@@ -5,6 +5,7 @@ Check and release tooling shared by the GreenTech-Solutions Factorio mods, so ea
 | What | Where |
 | --- | --- |
 | Check: Lua 5.2 syntax, luacheck, `emmylua_check` against the Factorio API, `changelog.txt` format | `action.yml`, `lua/` |
+| Load a mod and its portal dependencies in headless Factorio | `load/action.yml`, `load/` |
 | Release: semantic-release with semantic-release-factorio (version, `changelog.txt`, `info.json`, mod portal upload, GitHub release) | `release/action.yml`, `release/config.cjs` |
 | The same check locally | `bin/factorio-mod-check` |
 
@@ -48,6 +49,47 @@ What it runs, in order; every step runs, and the job fails if any of them fails:
    cannot parse is dropped without a word in the log, and the in-game Changelog button stays grey.
 
 The toolchain (Lua 5.2, luacheck, emmylua_check, the API library) is cached by the hash of `lua/versions.sh`.
+
+## Load
+
+[`load/action.yml`](load/action.yml) resolves the required dependencies of a mod from the portal, downloads them with a
+Factorio player token, then loads the mod in a headless Linux x64 Factorio build. Optional dependencies are left out;
+`extra-mods` can name additional portal mods to load. The action creates a new map and runs the requested number of
+ticks, then loads each `.zip` save in the optional `saves` directory and runs the same number of ticks. Mod archives
+are cached by their resolved versions. If `factorio-token` is empty, the action emits a notice and skips the load.
+
+```yaml
+# .github/workflows/load.yml
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: GreenTech-Solutions/factorio-mod-tools/load@v1
+        with:
+          path: .
+          factorio-username: ${{ vars.FACTORIO_USERNAME }}
+          factorio-token: ${{ secrets.FACTORIO_PLAYER_TOKEN }}
+          game-version: stable
+          ticks: 600
+          # saves: tests/saves
+          # extra-mods: |
+          #   some-portal-mod
+          #   another-portal-mod
+          # settings: '{"my-mod-startup-setting": true}'
+```
+
+Set the repository or organization variable `FACTORIO_USERNAME` to the account name that owns the player token, and the
+`FACTORIO_PLAYER_TOKEN` secret to that player's token (not the portal API key used to publish releases). A fork pull
+request without secrets is skipped with a notice. `settings` is a JSON object from startup-setting names to boolean,
+number or string values; it may also wrap those entries in a `startup` object.
 
 ## Release
 
@@ -100,5 +142,5 @@ mod has to provide gets `v2`. `.github/workflows/self-test.yml` runs the check o
 Releases are made by release-please (`.github/workflows/release.yml`): a push to `master` with a `feat`, `fix`, `perf`,
 `refactor` or `revert` commit opens a release PR (`!` makes a new major). Merging it tags `vX.Y.Z`, and the workflow moves
 `v1` and `v1.Y` onto it; these two tags get no GitHub Release. Tags are not set by hand. A push that changes the tooling
-(`action.yml`, `lua/`, `release/`, `publish/`, `bin/`, `package.json`) without a releasable commit fails. With a `PAT_TOKEN`
+(`action.yml`, `lua/`, `load/`, `release/`, `publish/`, `bin/`, `package.json`) without a releasable commit fails. With a `PAT_TOKEN`
 secret the release PR runs the self-test; with the default token it does not.
