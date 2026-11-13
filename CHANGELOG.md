@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.0.2...v1.1.0) (2026-11-13)
+
+
+### Features
+
+* forks take over the saves of the mod they replace ([#7](https://github.com/GreenTech-Solutions/factorio-mod-tools/issues/7)) ([9f3fdd4](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/9f3fdd4e94b4c0fc65d58212a121bf87c3245212))
+
 ## [1.0.2](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.0.1...v1.0.2) (2026-11-12)
 
 

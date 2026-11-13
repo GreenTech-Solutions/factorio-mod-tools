@@ -1,0 +1,9 @@
+{
+  "name": "good-mod-updated",
+  "version": "1.0.0",
+  "title": "Good mod (updated)",
+  "author": "GreenTech-Solutions",
+  "factorio_version": "2.1",
+  "dependencies": ["base", "! good-mod"],
+  "migrates_from": ["good-mod"]
+}

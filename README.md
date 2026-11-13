@@ -47,8 +47,34 @@ What it runs, in order; every step runs, and the job fails if any of them fails:
    [`lua/versions.sh`](lua/versions.sh). Catches fields and functions the game does not have.
 4. [`lua/check-changelog.py`](lua/check-changelog.py): `changelog.txt` in the format the game parses. A changelog it
    cannot parse is dropped without a word in the log, and the in-game Changelog button stays grey.
+5. [`lua/check-info.py`](lua/check-info.py): a fork takes over the saves of the mod it replaces. A mod named
+   `<original>-updated` (also `-Updated`, `-fork`, `-legacy`) lists `<original>` in `migrates_from` and declares
+   `! <original>`; a mod with `migrates_from` and a `control.lua` takes `storage._migrated`; a copy of
+   `migrated_storage.lua` is the same as [`lua/migrated_storage.lua`](lua/migrated_storage.lua).
 
 The toolchain (Lua 5.2, luacheck, emmylua_check, the API library) is cached by the hash of `lua/versions.sh`.
+
+## Forks: taking over the original's saves
+
+Since Factorio 2.1.18 `"migrates_from": ["<original>"]` in `info.json` makes the game hand a fork the state of the mod
+it replaces when a save that had the original is loaded with the fork: GUI elements, render objects and script
+inventories go to the fork, and the original's `storage` goes to `storage._migrated["<original>"]`, where it stays until
+the fork takes it. Copy [`lua/migrated_storage.lua`](lua/migrated_storage.lua) next to `control.lua` and take it first
+in `on_init` and in `on_configuration_changed`:
+
+```lua
+local migrated_storage = require("migrated_storage")
+
+local function take_original()
+  local old = migrated_storage.take({"original-mod"})
+  if old then
+    migrated_storage.adopt(old) -- or drop it, when it points to things the original took with it
+  end
+end
+```
+
+Whether to adopt is the fork's call: state that refers to the original's own prototypes, surfaces or planets is gone
+with the original and is rebuilt instead. A mod without `control.lua` only needs the field.
 
 ## Load
 
