@@ -5,6 +5,7 @@
 #   3. emmylua_check with lua/emmyrc.json merged with the mod's .emmyrc.json, against the Factorio API library:
 #      catches fields and functions the game does not have, like defines.default_icon_size after 2.1
 #   4. changelog.txt against the format the game parses (lua/check-changelog.py)
+#   5. info.json: a fork takes over the saves of the mod it replaces (migrates_from, lua/check-info.py)
 #   lua/check.sh [mod directory]    default: the current directory
 set -uo pipefail
 
@@ -67,5 +68,7 @@ if [ -f changelog.txt ]; then
 else
   echo "changelog: no changelog.txt"
 fi
+
+python3 "$here/check-info.py" . || status=1
 
 exit "$status"
