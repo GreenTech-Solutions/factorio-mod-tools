@@ -1,0 +1,108 @@
+name: Load Factorio mod
+description: Resolve a mod's portal dependencies and load it in headless Factorio
+inputs:
+  path:
+    description: Mod directory, relative to the workspace
+    required: false
+    default: "."
+  factorio-username:
+    description: Account name that owns the Factorio player token
+    required: false
+  factorio-token:
+    description: Factorio player token
+    required: false
+  game-version:
+    description: Full Factorio version or stable
+    required: false
+    default: stable
+  ticks:
+    description: Number of ticks to run after creating or loading a save
+    required: false
+    default: "600"
+  saves:
+    description: Optional workspace directory containing save .zip files
+    required: false
+  extra-mods:
+    description: Optional portal mod names, one per line or comma-separated
+    required: false
+  settings:
+    description: Optional JSON object of startup settings
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Skip when the player token is unavailable
+      if: ${{ inputs.factorio-token == '' }}
+      shell: bash
+      run: |
+        echo "::notice title=Factorio load skipped::The Factorio player token is not available. Fork pull requests do not receive repository secrets."
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          echo "The Factorio load was skipped because the player token is not available." >> "$GITHUB_STEP_SUMMARY"
+        fi
+    - name: Resolve the mod dependencies
+      id: prepare
+      if: ${{ inputs.factorio-token != '' }}
+      shell: bash
+      env:
+        MOD_PATH: ${{ inputs.path }}
+        FACTORIO_GAME_VERSION: ${{ inputs.game-version }}
+        EXTRA_MODS: ${{ inputs.extra-mods }}
+      run: |
+        set -euo pipefail
+        if [[ "$MOD_PATH" = /* ]]; then
+          mod_dir="$MOD_PATH"
+        else
+          mod_dir="$GITHUB_WORKSPACE/$MOD_PATH"
+        fi
+        mod_dir="$(cd "$mod_dir" && pwd)"
+        if [ ! -f "$mod_dir/info.json" ]; then
+          echo "::error::Mod info.json not found in the path input"
+          exit 2
+        fi
+        work_dir="$(mktemp -d "$RUNNER_TEMP/factorio-load.XXXXXX")"
+        mkdir -p "$work_dir/mods-cache"
+        lock="$work_dir/mods.lock"
+        python3 -I "$GITHUB_ACTION_PATH/mods.py" resolve \
+          --info "$mod_dir/info.json" \
+          --game "$FACTORIO_GAME_VERSION" \
+          --extra-mods "$EXTRA_MODS" \
+          --out "$lock"
+        key="$(python3 -I "$GITHUB_ACTION_PATH/mods.py" key --lock "$lock")"
+        game="$(python3 -I "$GITHUB_ACTION_PATH/mods.py" game --lock "$lock")"
+        {
+          printf 'work-dir=%s\n' "$work_dir"
+          printf 'mod-path=%s\n' "$mod_dir"
+          printf 'mods-lock=%s\n' "$lock"
+          printf 'mods-cache=%s\n' "$work_dir/mods-cache"
+          printf 'mods-key=%s\n' "$key"
+          printf 'game-version=%s\n' "$game"
+        } >> "$GITHUB_OUTPUT"
+    - name: Restore the mod cache
+      id: cache
+      if: ${{ inputs.factorio-token != '' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.prepare.outputs.mods-cache }}
+        key: factorio-mods-${{ runner.os }}-${{ steps.prepare.outputs.mods-key }}
+        restore-keys: factorio-mods-${{ runner.os }}-
+    - name: Load the mod in Factorio
+      if: ${{ inputs.factorio-token != '' }}
+      shell: bash
+      env:
+        MOD_PATH: ${{ steps.prepare.outputs.mod-path }}
+        MODS_LOCK: ${{ steps.prepare.outputs.mods-lock }}
+        MODS_CACHE: ${{ steps.prepare.outputs.mods-cache }}
+        WORK_DIR: ${{ steps.prepare.outputs.work-dir }}
+        FACTORIO_GAME_VERSION: ${{ steps.prepare.outputs.game-version }}
+        FACTORIO_TICKS: ${{ inputs.ticks }}
+        FACTORIO_SAVES: ${{ inputs.saves }}
+        FACTORIO_SETTINGS: ${{ inputs.settings }}
+        FACTORIO_USERNAME: ${{ inputs.factorio-username }}
+        FACTORIO_TOKEN: ${{ inputs.factorio-token }}
+      run: bash "$GITHUB_ACTION_PATH/run.sh"
+    - name: Save the mod cache
+      if: ${{ always() && inputs.factorio-token != '' && steps.prepare.outcome == 'success' && steps.cache.outcome == 'success' && steps.cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.prepare.outputs.mods-cache }}
+        key: ${{ steps.cache.outputs.cache-primary-key }}
