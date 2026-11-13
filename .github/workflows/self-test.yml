@@ -33,6 +33,23 @@ jobs:
         run: |
           echo "::error::test/bad-mod passed the check"
           exit 1
+      - name: Check the good fork
+        uses: ./
+        with:
+          path: test/good-mod-updated
+      - name: Check the bad fork
+        id: bad-fork
+        continue-on-error: true
+        uses: ./
+        with:
+          path: test/bad-mod-updated
+      - name: The bad fork must fail
+        if: steps.bad-fork.outcome != 'failure'
+        run: |
+          echo "::error::test/bad-mod-updated passed the check"
+          exit 1
+      - name: Unit test of migrated_storage.lua
+        run: ~/.local/share/factorio-lua/5.2/bin/lua test/migrated_storage_test.lua
 
   release:
     name: release config
