@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.1.0...v1.2.0) (2026-11-13)
+
+
+### Features
+
+* load action that runs a mod in headless Factorio ([#6](https://github.com/GreenTech-Solutions/factorio-mod-tools/issues/6)) ([e474fcd](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/e474fcdd11b75b9569b9f9ffac690bddc2901ed3))
+
 ## [1.1.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.0.2...v1.1.0) (2026-11-13)
 
 
