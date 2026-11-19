@@ -33,6 +33,15 @@ jobs:
         run: |
           echo "::error::test/bad-mod passed the check"
           exit 1
+      # the bad mod fails other checks too; the list of game files, as on any runner without the game
+      - name: The asset check must catch the wrong sound path
+        run: |
+          if python3 lua/check-assets.py test/bad-mod > assets.log; then
+            echo "::error::lua/check-assets.py passed test/bad-mod"
+            exit 1
+          fi
+          cat assets.log
+          grep -q "data.lua:3: error: __base__/sound/alarm-1.ogg is not in the game files" assets.log
       - name: Check the good fork
         uses: ./
         with:

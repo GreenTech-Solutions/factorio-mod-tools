@@ -6,6 +6,8 @@
 #      catches fields and functions the game does not have, like defines.default_icon_size after 2.1
 #   4. changelog.txt against the format the game parses (lua/check-changelog.py)
 #   5. info.json: a fork takes over the saves of the mod it replaces (migrates_from, lua/check-info.py)
+#   6. sound and image paths in the Lua ("__base__/sound/….ogg") exist in the mod or the game (lua/check-assets.py):
+#      a headless game never loads them, so a wrong path passes every other check and every headless test
 #   lua/check.sh [mod directory]    default: the current directory
 set -uo pipefail
 
@@ -70,5 +72,7 @@ else
 fi
 
 python3 "$here/check-info.py" . || status=1
+
+python3 "$here/check-assets.py" . || status=1
 
 exit "$status"
