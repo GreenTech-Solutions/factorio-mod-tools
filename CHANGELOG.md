@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.2.0...v1.3.0) (2026-11-19)
+
+
+### Features
+
+* **check:** sound and image paths in the Lua must exist in the mod or the game ([908ab26](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/908ab26b44bbe2ed13f34535d2ae5ac02c922218))
+* **check:** sound and image paths in the Lua must exist in the mod or the game ([#10](https://github.com/GreenTech-Solutions/factorio-mod-tools/issues/10)) ([5193f30](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/5193f30d4aaeaa256795942d720de858c69523e0))
+
 ## [1.2.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.1.0...v1.2.0) (2026-11-13)
 
 
