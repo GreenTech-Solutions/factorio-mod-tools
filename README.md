@@ -4,7 +4,7 @@ Check and release tooling shared by the GreenTech-Solutions Factorio mods, so ea
 
 | What | Where |
 | --- | --- |
-| Check: Lua 5.2 syntax, luacheck, `emmylua_check` against the Factorio API, `changelog.txt` format | `action.yml`, `lua/` |
+| Check: Lua 5.2 syntax, luacheck, `emmylua_check` against the Factorio API, `changelog.txt` format, `info.json`, sound and image paths | `action.yml`, `lua/` |
 | Load a mod and its portal dependencies in headless Factorio | `load/action.yml`, `load/` |
 | Release: semantic-release with semantic-release-factorio (version, `changelog.txt`, `info.json`, mod portal upload, GitHub release) | `release/action.yml`, `release/config.cjs` |
 | The same check locally | `bin/factorio-mod-check` |
@@ -51,6 +51,17 @@ What it runs, in order; every step runs, and the job fails if any of them fails:
    `<original>-updated` (also `-Updated`, `-fork`, `-legacy`) lists `<original>` in `migrates_from` and declares
    `! <original>`; a mod with `migrates_from` and a `control.lua` takes `storage._migrated`; a copy of
    `migrated_storage.lua` is the same as [`lua/migrated_storage.lua`](lua/migrated_storage.lua).
+6. [`lua/check-assets.py`](lua/check-assets.py): every string literal `"__<mod>__/<path>.ogg"` (also `.wav`, `.png`,
+   `.jpg`) in the Lua names a file that exists. A headless game never loads sounds and images, so a wrong path passes
+   every other check and every headless test, and a game with graphics refuses to start with the mod.
+   `__<this mod>__/…` (the `name` in `info.json`) is looked up in the mod folder; `__base__`, `__core__`,
+   `__space-age__`, `__quality__`, `__elevated-rails__` and `__recycler__` in the game files; paths into other mods are
+   skipped with a note. Case counts, as on Linux. Comments, the top-level `tests/`, `test/` and `spec/` folders (unit
+   tests with made-up paths), paths put together with `..` and `string.format` templates are not checked. The game
+   files are `$FACTORIO_DATA`, else a game installed in the usual Steam or `/Applications` place, else
+   [`lua/game-assets.txt.gz`](lua/game-assets.txt.gz), the list of these files in the version on its first line; CI uses
+   the list, since [wube/factorio-data](https://github.com/wube/factorio-data) has no graphics or sounds. Rebuild it
+   from a game with graphics after an update that moves files: `lua/check-assets.py --write-game-list [data folder]`.
 
 The toolchain (Lua 5.2, luacheck, emmylua_check, the API library) is cached by the hash of `lua/versions.sh`.
 
@@ -163,7 +174,8 @@ Linux x64 and macOS arm64.
 Mods use the `v1` tag, which moves to the latest `v1.x.y`. A change that can make a passing mod fail (a stricter check,
 a new API version) goes into a new minor version with a line in the release notes; a change of the inputs or of what the
 mod has to provide gets `v2`. `.github/workflows/self-test.yml` runs the check on `test/good-mod` (must pass) and
-`test/bad-mod` (must fail) and loads the release config with all its plugins.
+`test/bad-mod` (must fail), checks that the asset check alone catches the wrong sound path in `test/bad-mod`, and loads
+the release config with all its plugins.
 
 Releases are made by release-please (`.github/workflows/release.yml`): a push to `master` with a `feat`, `fix`, `perf`,
 `refactor` or `revert` commit opens a release PR (`!` makes a new major). Merging it tags `vX.Y.Z`, and the workflow moves
