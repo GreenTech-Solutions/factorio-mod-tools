@@ -121,7 +121,15 @@ jobs:
           #   some-portal-mod
           #   another-portal-mod
           # settings: '{"my-mod-startup-setting": true}'
+          # log-required: |
+          #   my-mod: (\d+) of \1 changes applied
+          # log-forbidden: |
+          #   my-mod: .*left as it is
 ```
+
+`log-required` and `log-forbidden` accept Python regular expressions, one per line. Every required expression must
+match a line in the log, and no forbidden expression may match. The action checks the log after each successful run:
+new-map creation, new-map ticks, and each save.
 
 Set the repository or organization variable `FACTORIO_USERNAME` to the account name that owns the player token, and the
 `FACTORIO_PLAYER_TOKEN` secret to that player's token (not the portal API key used to publish releases). A fork pull
