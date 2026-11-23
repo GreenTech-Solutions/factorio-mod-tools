@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Shellcheck
-        run: shellcheck -x lua/*.sh bin/factorio-mod-check
+        run: shellcheck -x lua/*.sh bin/factorio-mod-check load/run.sh
       - name: Check the good mod
         uses: ./
         with:
@@ -59,6 +59,41 @@ jobs:
           exit 1
       - name: Unit test of migrated_storage.lua
         run: ~/.local/share/factorio-lua/5.2/bin/lua test/migrated_storage_test.lua
+      - name: Log check
+        run: |
+          assert_log_check() {
+            local expected_code="$1" expected_text="$2" output code
+            shift 2
+            set +e
+            output="$(python3 -I load/log_check.py "$@" 2>&1)"
+            code=$?
+            set -e
+            if [ "$code" -ne "$expected_code" ]; then
+              echo "::error::Expected log check exit code $expected_code, got $code"
+              printf '%s\n' "$output"
+              return 1
+            fi
+            if [ -n "$expected_text" ] && [[ "$output" != *"$expected_text"* ]]; then
+              echo "::error::Log check output did not contain: $expected_text"
+              printf '%s\n' "$output"
+              return 1
+            fi
+            if [ "$expected_code" -eq 0 ] && [ -n "$output" ]; then
+              echo "::error::Passing log check printed output"
+              printf '%s\n' "$output"
+              return 1
+            fi
+            if [ "$expected_code" -ne 0 ]; then
+              printf '%s\n' "$output"
+            fi
+          }
+          assert_log_check 0 '' --log test/load-log/pass.log \
+            --required 'nexus-rebalanced: [0-9]+ of [0-9]+ changes applied' --forbidden 'left as it is'
+          assert_log_check 1 'forbidden in the log:' --log test/load-log/fail.log \
+            --required 'nexus-rebalanced: [0-9]+ of [0-9]+ changes applied' --forbidden 'left as it is'
+          assert_log_check 1 'missing in the log:' --log test/load-log/pass.log \
+            --required 'required text that is not present'
+          assert_log_check 2 'error: bad pattern (' --log test/load-log/pass.log --required '('
 
   release:
     name: release config

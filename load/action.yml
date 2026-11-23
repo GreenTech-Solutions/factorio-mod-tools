@@ -28,6 +28,12 @@ inputs:
   settings:
     description: Optional JSON object of startup settings
     required: false
+  log-required:
+    description: Optional regular expressions, one per line, that every Factorio log must match
+    required: false
+  log-forbidden:
+    description: Optional regular expressions, one per line, that no Factorio log may match
+    required: false
 runs:
   using: composite
   steps:
@@ -97,6 +103,8 @@ runs:
         FACTORIO_TICKS: ${{ inputs.ticks }}
         FACTORIO_SAVES: ${{ inputs.saves }}
         FACTORIO_SETTINGS: ${{ inputs.settings }}
+        FACTORIO_LOG_REQUIRED: ${{ inputs.log-required }}
+        FACTORIO_LOG_FORBIDDEN: ${{ inputs.log-forbidden }}
         FACTORIO_USERNAME: ${{ inputs.factorio-username }}
         FACTORIO_TOKEN: ${{ inputs.factorio-token }}
       run: bash "$GITHUB_ACTION_PATH/run.sh"

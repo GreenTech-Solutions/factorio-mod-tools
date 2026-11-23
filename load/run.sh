@@ -13,6 +13,8 @@ game="${FACTORIO_GAME_VERSION:-}"
 ticks="${FACTORIO_TICKS:-600}"
 saves="${FACTORIO_SAVES:-}"
 settings="${FACTORIO_SETTINGS:-}"
+log_required="${FACTORIO_LOG_REQUIRED:-}"
+log_forbidden="${FACTORIO_LOG_FORBIDDEN:-}"
 
 fail() {
   echo "error: $*" >&2
@@ -65,12 +67,31 @@ fi
 
 run_case() {
   local name="$1" run_dir="$2"; shift 2
-  local output="$run_dir/$name.txt" log="$run_dir/factorio-current.log" code error_line
+  local output="$run_dir/$name.txt" log="$run_dir/factorio-current.log" code error_line check_output
   mkdir -p "$run_dir/config" || fail "cannot create the Factorio run directory"
   printf '[path]\nread-data=__PATH__executable__/../../data\nwrite-data=%s\n[other]\nenable-new-mods=false\n' "$run_dir" > "$run_dir/config.ini"
   echo "Running $name"
   if timeout --signal=TERM 1500 "$factorio_bin" -c "$run_dir/config.ini" --mod-directory "$mods_dir" "$@" \
     < /dev/null > "$output" 2>&1; then
+    if [ -n "$log_required" ] || [ -n "$log_forbidden" ]; then
+      if check_output="$(py log_check.py --log "$log" --required "$log_required" --forbidden "$log_forbidden" 2>&1)"; then
+        :
+      else
+        echo "::error title=Factorio log check failed::$name"
+        printf '%s\n' "$check_output" >&2
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          {
+            printf '| %s | FAILED, log check |\n\n' "$name"
+            echo 'Factorio log check output:'
+            echo
+            echo '```text'
+            printf '%s\n' "$check_output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+        return 1
+      fi
+    fi
     echo "ok   $name"
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
       printf '| %s | ok |\n' "$name" >> "$GITHUB_STEP_SUMMARY"
