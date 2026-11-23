@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.3.0...v1.4.0) (2026-11-23)
+
+
+### Features
+
+* **load:** log-required and log-forbidden inputs check the Factorio log of every run ([e9ddfa2](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/e9ddfa281fb24a68ea9329670527f7e6b25542b0))
+* **load:** log-required and log-forbidden inputs check the Factorio log of every run ([491da18](https://github.com/GreenTech-Solutions/factorio-mod-tools/commit/491da183fc991824ccd2347745165cc99645b0f8))
+
 ## [1.3.0](https://github.com/GreenTech-Solutions/factorio-mod-tools/compare/v1.2.0...v1.3.0) (2026-11-19)
 
 
